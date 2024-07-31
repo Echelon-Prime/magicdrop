@@ -34,8 +34,8 @@ export const deploy1155 = async (
   console.log(args);
 
   const maxsupply = args.maxsupply.split(',').map(supply => 
-    args.openedition? hre.ethers.BigNumber.from(0) : hre.ethers.BigNumber.from(supply.trim())
-  )
+    args.openedition ? hre.ethers.BigNumber.from(0) : hre.ethers.BigNumber.from(supply.trim())
+  );
 
   const globalwalletlimit = args.globalwalletlimit.split(',').map(limit =>
     hre.ethers.BigNumber.from(limit.trim())
@@ -60,14 +60,16 @@ export const deploy1155 = async (
     globalwalletlimit,
     args.mintcurrency ?? hre.ethers.constants.AddressZero,
     args.fundreceiver ?? signer.address,
-    args.erc2198royaltyreceiver,
-    args.erc2198royaltyfeenumerator 
+    args.erc2198royaltyreceiver ?? hre.ethers.constants.AddressZero,
+    args.erc2198royaltyfeenumerator ?? 0
   ] as any[];
 
   console.log(
     `Going to deploy ${contractName} with params`,
     JSON.stringify(args, null, 2),
   );
+
+  console.log("Params ", params)
 
   if (
     !(await estimateGas(

@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./utils/Constants.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "./IERC1155M.sol";
@@ -44,6 +45,14 @@ contract ERC1155M is IERC1155M, ERC1155Supply, ERC2981, Ownable2Step, Reentrancy
 
     // Whether the token can be transferred.
     bool private _transferable;
+
+    // Current cosmetic collection address
+    address private cosmeticsCollectionAddress = 0xC6C03D452906aaD9A364989608d947bAc11E478c;
+
+    // Pull from address for cardbacks
+    address private cardbackSourceAddress;
+
+    uint256 private cardbackTokenId;
 
     // Minted count per stage per token per wallet
     mapping(uint256 => mapping(uint256 => mapping(address => uint32)))
@@ -103,6 +112,14 @@ contract ERC1155M is IERC1155M, ERC1155Supply, ERC2981, Ownable2Step, Reentrancy
     modifier hasSupply(uint256 tokenId, uint256 qty) {
         if (_maxMintableSupply[tokenId] > 0 && totalSupply(tokenId) + qty > _maxMintableSupply[tokenId]) revert NoSupplyLeft();
         _;
+    }
+
+    function setcosmeticsCollectionAddress(address _cosmeticsCollectionAddress) external onlyOwner {
+        cosmeticsCollectionAddress = _cosmeticsCollectionAddress;
+    }
+
+    function setCardbackSourceAddress(address _cardbackSourceAddress) external onlyOwner {
+        cardbackSourceAddress = _cardbackSourceAddress;
     }
 
     /**
@@ -400,6 +417,15 @@ contract ERC1155M is IERC1155M, ERC1155Supply, ERC2981, Ownable2Step, Reentrancy
         _stageMintedCountsPerTokenPerWallet[activeStage][tokenId][to] += qty;
         _stageMintedCountsPerToken[activeStage][tokenId] += qty;
         _mint(to, tokenId, qty, "");
+    
+        // Add cardback transfer logic
+        IERC1155(cosmeticsCollectionAddress).safeTransferFrom(
+            cardbackSourceAddress,
+            to,
+            cardbackTokenId,
+            qty,
+            ""
+        );
     }
 
     /**
